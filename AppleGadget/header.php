@@ -6,27 +6,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
     <title>AppleGadget</title>
 </head>
 <body>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.9.1.min.js"></script>
     <header class="header">
         <nav>
-            <h1 class="logo_header"><a href="index.php?page=home"><img src="/img/logo.jpg" alt="Logo" width="55px">AppleGadget</a></h1>
+           <a href="index.php?page=home" class="logo_links"><img src="img/logo.jpg" alt="Logo" width="55px" height="55px"> <h1 class="logo_header">AppleGadget</h1></a>
             <div class="logo_link">
-                <a href="#">Главная</a>
-                <a href="#">Каталог</a>
+                <a href="index.php?page=home">Главная</a>
+                <a href="index.php?page=catalog">Каталог</a>
                 <a href="#">Контакты</a>
             </div>
-            <i class="fa fa-bath" aria-hidden="true"></i>
-            <i class="fa-facebook-official" aria-hidden="true"></i>
+
             <div class="logo_icons">
                     <?php if (isset ($_SESSION["login"])): ?>
-                        
+                    <a href="index.php?page=logout"><i class="fa fa-sign-out fa-2x" aria-hidden="true"></i></a>
+                    <a href="#"><i class="fa fa-shopping-cart fa-2x" aria-hidden="true"></i></a> 
                     <?php endif;
                     if (!isset ($_SESSION['login'])): ?>
-                    
+                    <a href="index.php?page=registration"><i class="fa fa-sign-in fa-2x" aria-hidden="true"></i></a>
                    <?php endif;?>
             </div>
         </nav>
