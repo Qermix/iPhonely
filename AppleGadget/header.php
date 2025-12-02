@@ -18,16 +18,16 @@
             <div class="logo_link">
                 <a href="index.php?page=home">Главная</a>
                 <a href="index.php?page=catalog">Каталог</a>
-                <a href="#">Контакты</a>
+                <a href="index.php?page=contacts">Контакты</a>
             </div>
 
             <div class="logo_icons">
                     <?php if (isset ($_SESSION["login"])): ?>
                     <a href="index.php?page=logout"><i class="fa fa-sign-out fa-2x" aria-hidden="true"></i></a>
-                    <a href="#"><i class="fa fa-shopping-cart fa-2x" aria-hidden="true"></i></a> 
+                    <a href="index.php?page=cart"><i class="fa fa-shopping-cart fa-2x" aria-hidden="true"></i></a> 
                     <?php endif;
                     if (!isset ($_SESSION['login'])): ?>
-                    <a href="index.php?page=registration"><i class="fa fa-sign-in fa-2x" aria-hidden="true"></i></a>
+                    <a href="index.php?page=login"><i class="fa fa-sign-in fa-2x" aria-hidden="true"></i></a>
                    <?php endif;?>
             </div>
         </nav>

@@ -86,6 +86,21 @@ $categories = $categories_stmt->fetchAll(PDO::FETCH_COLUMN);
 
 $colors_stmt = $pdo->query("SELECT DISTINCT color FROM gadgets ORDER BY color");
 $colors = $colors_stmt->fetchAll(PDO::FETCH_COLUMN);
+
+if (isset($_POST['search'])) {
+$search = $pdo->real_escape_string($_POST['search']);
+$sql = $search ?
+"SELECT name FROM gadgets WHERE name LIKE '%$search%'" :
+"SELECT name FROM gadgets";
+$result = $pdo->query($sql);
+if ($result->num_rows > 0) {
+while ($row = $result->fetch_assoc()) {
+echo "<tr><td>" . $row['name'] . "</td></tr>";
+}
+} else {
+echo "<tr><td colspan='1'>Нет совпадений</td></tr>";
+}
+}
 ?>
 <div class="catalog-container">
     <!-- Боковая панель фильтров -->
@@ -131,9 +146,19 @@ $colors = $colors_stmt->fetchAll(PDO::FETCH_COLUMN);
     </aside>
 
         <!-- Сетка товаров -->
-        <div class="main_products">
+    <div class="main_products">
             <div class="catalog_header">
                 <h1 class="catalog-title">Каталог товаров</h1>
+                <div class="searc">
+                    <input type="text" id="search" placeholder="Поиск...">
+                    <table id="result">
+                        <thead>
+                        </thead>
+                    <tbody>
+
+                    </tbody>
+                    </table>
+                </div>
             </div>
         <div class="products-grid">
             <?php if(empty($products)): ?>
@@ -144,25 +169,28 @@ $colors = $colors_stmt->fetchAll(PDO::FETCH_COLUMN);
             <?php else: ?>
                 <?php foreach($products as $product): ?>
                     <div class="product-card">
+                        <a href="index.php?page=product&id=<?=$product['id']?>">
                         <div class="product-image">
-                            <img src="img/<?= htmlspecialchars($product['img']) ?>" 
+                            <img src="img/<?= htmlspecialchars($product['img'])?>" 
                                  alt="<?= htmlspecialchars($product['name']) ?>">
                         </div>
                         <div class="product-info">
-                            <p class="product-price"><?=$product['price'] ?> ₽</p>
+                            <p class="title_product_home"><?=$product['name']?></p>
+                            <p class="under_title_slogan"><?=$product['slogan']?></p>
+                            <p class="product-price"><?=isset($product['price']) ? number_format((float)$product['price'], 0, '', ' ') : '0'  ?> ₽</p>
                             <div class="product-actions">
-                            <form action="index.php?page=cart" method="post">
-                                 <input type="hidden" name="product_id" value="<?=$product['id']?>">
-                                 <input type="submit" value="Добавить в корзину">
-                            </form>
+                            <button class="add-to-cart-btn" data-product-id="<?=$product['id']?>">
+                                         Добавить в корзину
+                             </button>
                             </div>
+                            </div>
+                            </a>
                         </div>
-                    </div>
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
-        </div>
-        <div></div>
+    </div>
+    <div></div>
 
 <!-- Пагинация -->
         <?php if($total_pages > 1): ?>
@@ -234,6 +262,125 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('filterForm').submit();
         });
     });
+})
+/*** */
+$(document).ready(function() {
+    console.log('Catalog page loaded'); // Для отладки
+    // Добавление товара в корзину с каталога
+    $(document).on('click', '.add-to-cart-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var productId = $(this).data('product-id');
+        var button = $(this);
+        var productCard = $(this).closest('.product-card');
+        var productName = productCard.find('.title_product_home').text();
+        
+        console.log('Adding product to cart:', productId, productName);
+        
+        // Блокируем кнопку на время запроса
+        button.prop('disabled', true).text('Добавляем...');
+        
+        $.ajax({
+            url: 'ajax_cart.php',
+            type: 'POST',
+            data: {
+                action: 'add',
+                product_id: productId
+            },
+            dataType: 'json',
+            success: function(response) {
+                console.log('Add to cart response:', response);
+                
+                if (response.success) {
+                    // Обновляем счетчик в шапке
+                    $('.cart-count').text(response.cart_count);
+                    
+                    // Показываем уведомление
+                    showNotification(response.message || 'Товар добавлен в корзину');
+                    
+                    // Возвращаем текст кнопки через 2 секунды
+                    setTimeout(function() {
+                        button.prop('disabled', false).text('Добавить в корзину');
+                    }, 2000);
+                    
+                    // Обновляем корзину в реальном времени
+                    updateCartDisplay();
+                } else {
+                    alert(response.message || 'Ошибка при добавлении товара');
+                    button.prop('disabled', false).text('Добавить в корзину');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('AJAX Error:', xhr.responseText, status, error);
+                
+                // Показываем более подробную ошибку
+                var errorMsg = 'Ошибка при добавлении товара в корзину';
+                if (xhr.responseText) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.message) {
+                            errorMsg = response.message;
+                        }
+                    } catch(e) {
+                        errorMsg = xhr.responseText.substring(0, 100);
+                    }
+                }
+                
+                alert(errorMsg);
+                button.prop('disabled', false).text('Добавить в корзину');
+            }
+        });
+    });
+    
+    // Функция обновления отображения корзины (если корзина открыта)
+    function updateCartDisplay() {
+        // Если мы на странице корзины, обновляем её
+        if (window.location.href.indexOf('page=cart') !== -1) {
+            $.ajax({
+                url: 'ajax_cart.php',
+                type: 'POST',
+                data: { action: 'get' },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        updateCartView(response);
+                    }
+                }
+            });
+        }
+    }
+    
+    // Функция обновления вида корзины
+    function updateCartView(data) {
+        // Эта функция будет обновлять корзину без перезагрузки
+        console.log('Updating cart view with:', data);
+    }
+    
+    // Функция показа уведомления
+    function showNotification(message) {
+        // Удаляем предыдущие уведомления
+        $('.cart-notification').remove();
+        
+        var notification = $('<div class="cart-notification">' + message + '</div>');
+        $('body').append(notification);
+        
+        // Уведомление само стилизуется через CSS
+        // Удаляем через 3 секунды
+        setTimeout(function() {
+            notification.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+    
+    // Предотвращаем клик на всю карточку товара
+    $('.product-card .product-link').on('click', function(e) {
+        console.log('Product link clicked');
+        // Разрешаем переход по ссылке, но останавливаем всплытие
+        return true;
+    });
 });
 </script>
+
 <?=template_footer()?>

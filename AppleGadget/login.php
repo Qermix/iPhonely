@@ -15,7 +15,7 @@ if (isset($_SESSION['login'])){
                 echo $rows['login'];
                 $dblogin = $rows['login'];
                 $dbpassowrd = $rows['password'];
-            }if ($login === $dblogin && $password === $dbpassowrd){
+            }if ($login == $dblogin && $password == $dbpassowrd){
                 $_SESSION['login'] = $login;
                 header('Location: index.php');
             }
