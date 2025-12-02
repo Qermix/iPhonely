@@ -822,7 +822,7 @@ footer{
     background: #0071e3;
     color: white;
     border: none;
-    padding: 14px;
+    padding: 14px 50px;
     border-radius: 980px;
     font-weight: 600;
     cursor: pointer;
@@ -1374,4 +1374,74 @@ footer{
 .info-section p {
     font-size: 14px;
     margin-bottom: 5px;
+}
+
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.quantity-input {
+    -moz-appearance: textfield;
+}
+
+.cart-count {
+    font-size: 12px;
+    padding: 2px 6px;
+}
+
+.alert {
+    animation: slideInDown 0.5s ease;
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Адаптивность для корзины */
+@media (max-width: 768px) {
+    .cart-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .cart-item {
+        grid-template-columns: 80px 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 10px;
+    }
+    
+    .cart-item-image {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    
+    .cart-item-info {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    
+    .cart-item-quantity {
+        grid-column: 1 / span 2;
+        grid-row: 2;
+        justify-content: center;
+    }
+    
+    .cart-item-total {
+        grid-column: 1;
+        grid-row: 3;
+        text-align: left;
+    }
+    
+    .cart-item-remove {
+        grid-column: 2;
+        grid-row: 3;
+        justify-self: end;
+    }
 }

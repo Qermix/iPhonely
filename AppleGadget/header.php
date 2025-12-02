@@ -8,6 +8,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+    <!-- Добавляем после <title> -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <title>AppleGadget</title>
 </head>
 <body>
@@ -22,14 +25,25 @@
             </div>
 
             <div class="logo_icons">
-                    <?php if (isset ($_SESSION["login"])): ?>
-                    <a href="index.php?page=logout"><i class="fa fa-sign-out fa-2x" aria-hidden="true"></i></a>
-                    <a href="index.php?page=cart"><i class="fa fa-shopping-cart fa-2x" aria-hidden="true"></i></a> 
-                    <?php endif;
-                    if (!isset ($_SESSION['login'])): ?>
-                    <a href="index.php?page=login"><i class="fa fa-sign-in fa-2x" aria-hidden="true"></i></a>
-                   <?php endif;?>
-            </div>
+    <?php if (isset ($_SESSION["login"])): ?>
+    <a href="index.php?page=logout" class="me-3" title="Выйти">
+        <i class="fa fa-sign-out fa-2x" aria-hidden="true"></i>
+    </a>
+    <a href="index.php?page=cart" class="position-relative" title="Корзина">
+        <i class="fa fa-shopping-cart fa-2x" aria-hidden="true"></i>
+        <?php if(getCartCount() > 0): ?>
+        <span class="cart-count badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" style="font-size: 10px; padding: 2px 5px;">
+            <?= getCartCount() ?>
+        </span>
+        <?php endif; ?>
+    </a> 
+    <?php endif;
+    if (!isset ($_SESSION['login'])): ?>
+    <a href="index.php?page=login" title="Войти">
+        <i class="fa fa-sign-in fa-2x" aria-hidden="true"></i>
+    </a>
+    <?php endif; ?>
+</div>
         </nav>
     </header>
 <main>

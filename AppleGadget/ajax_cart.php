@@ -33,6 +33,9 @@ switch ($action) {
     case 'update':
         updateCart($pdo);
         break;
+    case 'clear':
+        clearCart();
+        break;
     case 'remove':
         removeFromCart($pdo);
         break;
@@ -42,6 +45,16 @@ switch ($action) {
     default:
         echo json_encode(['success' => false, 'message' => 'Неизвестное действие: ' . $action]);
         exit;
+}
+
+// Добавляем новую функцию:
+function clearCart() {
+    $_SESSION['cart'] = [];
+    
+    echo json_encode([
+        'success' => true,
+        'message' => 'Корзина очищена'
+    ]);
 }
 
 function addToCart($pdo) {
@@ -82,7 +95,7 @@ function addToCart($pdo) {
             'name' => $product['name'],
             'price' => $price,
             'quantity' => $quantity,
-            'color' => $product['Сolor'],
+            'color' => isset($product['Color']) ? $product['Color'] : $product['color'],
             'img' => $product['img'],
             'slogan' => $product['slogan']
         ];

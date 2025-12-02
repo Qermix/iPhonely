@@ -38,44 +38,47 @@ include 'header.php';
             <p class="product-slogan"><?= htmlspecialchars($product['slogan']) ?></p>
             
             <div class="product-price">
-                    <span class="price-old"><?= $product['price']?> ₽</span>
+                    <span class="price-old"><?=isset($product['price']) ? number_format((float)$product['price'], 0, '', ' ') : '0'  ?> ₽</span>
 
             </div>
             
             <!-- Выбор цвета (если есть варианты) -->
-            <?php if (!empty($color_variants)): ?>
-            <div class="color-section">
-                <div class="color-label">Цвет</div>
-                <div class="color-options">
-                    <a href="index.php?page=product&id=<?= $product['id'] ?>" class="color-option active">
-                        <?= $product['сolor']?>
-                    </a>
-                    <?php foreach ($color_variants as $variant): ?>
-                    <a href="index.php?page=product&id=<?= $variant['id'] ?>" class="color-option">
-                        <?= $product['сolor']?>
-                    </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
+           <?php if (!empty($color_variants)): ?>
+<div class="color-section mb-4">
+    <div class="color-label fw-bold mb-2">Цвет</div>
+    <div class="color-options d-flex flex-wrap gap-2">
+        <a href="index.php?page=product&id=<?= $product['id'] ?>" 
+           class="color-option btn btn-sm <?= ($product['id'] == $_GET['id']) ? 'btn-primary' : 'btn-outline-primary' ?>">
+            <?= $product['Color'] ?>
+        </a>
+        <?php foreach ($color_variants as $variant): ?>
+        <a href="index.php?page=product&id=<?= $variant['id'] ?>" 
+           class="color-option btn btn-sm <?= ($variant['id'] == $_GET['id']) ? 'btn-primary' : 'btn-outline-primary' ?>">
+            <?= $variant['Color'] ?>
+        </a>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
             
             <!-- Кнопка добавления в корзину -->
             <div class="add-to-cart-section">
-    <div class="quantity-selector" style="margin-bottom: 15px;">
-        <label for="quantity">Количество:</label>
-        <div class="quantity-controls">
-            <button type="button" class="quantity-btn minus">-</button>
-            <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="<?= $product['quantity'] ?>">
-            <button type="button" class="quantity-btn plus">+</button>
-        </div>
+   <div class="quantity-selector mb-4">
+    <label for="quantity" class="form-label">Количество:</label>
+    <div class="d-flex align-items-center" style="width: 150px;">
+        <button type="button" class="quantity-btn minus btn btn-outline-secondary rounded-0 rounded-start">-</button>
+        <input type="number" id="quantity" class="quantity-input form-control rounded-0 text-center" 
+               value="1" min="1" max="<?= $product['quantity'] ?>" style="width: 60px;">
+        <button type="button" class="quantity-btn plus btn btn-outline-secondary rounded-0 rounded-end">+</button>
     </div>
+</div>
     <button class="add-to-cart-btn product-page-btn" data-product-id="<?= $product['id'] ?>">
         Добавить в корзину
     </button>
 </div>
             
             <!-- Информация о товаре -->
-            <div class="productinfo">
+            <div class="product_info">
                 <div class="info-item">
                     <i class="fa fa-truck" aria-hidden="true"></i>
                     <span>Бесплатная доставка</span>
@@ -93,10 +96,10 @@ include 'header.php';
     </div>
     
     <!-- Описание товара -->
-    <div class="product-description">
-        <h2>Описание</h2>
-        <span><?=$product['description']?></span>
-    </div>
+    <div class="product-description mt-5">
+    <h2>Описание</h2>
+    <p><?= nl2br(htmlspecialchars($product['description'])) ?></p>
+</div>
 </div>
 <?=template_footer()?>
 
@@ -108,6 +111,8 @@ $(document).ready(function() {
         });
     });
 $(document).ready(function() {
+    // Убираем лишний скрипт (оставляем только один)
+    
     // Управление количеством
     $('.quantity-btn.minus').on('click', function() {
         var input = $('#quantity');
@@ -134,8 +139,6 @@ $(document).ready(function() {
         var quantity = parseInt($('#quantity').val()) || 1;
         var button = $(this);
         
-        console.log('Adding product to cart from product page:', productId, 'quantity:', quantity);
-        
         // Блокируем кнопку на время запроса
         button.prop('disabled', true).text('Добавляем...');
         
@@ -153,41 +156,43 @@ $(document).ready(function() {
                     // Обновляем счетчик в шапке
                     $('.cart-count').text(response.cart_count);
                     
-                    // Показываем уведомление
-                    showNotification(quantity > 1 
+                    // Bootstrap уведомление
+                    showBootstrapNotification(quantity > 1 
                         ? quantity + ' товара добавлено в корзину' 
-                        : 'Товар добавлен в корзину');
+                        : 'Товар добавлен в корзину', 'success');
                     
                     // Возвращаем текст кнопки
                     setTimeout(function() {
                         button.prop('disabled', false).text('Добавить в корзину');
                     }, 2000);
                 } else {
-                    alert('Ошибка: ' + (response.message || 'Неизвестная ошибка'));
+                    showBootstrapNotification(response.message || 'Ошибка при добавлении', 'danger');
                     button.prop('disabled', false).text('Добавить в корзину');
                 }
             },
-            error: function(xhr, status, error) {
-                console.error('AJAX error:', xhr, status, error);
-                alert('Ошибка при добавлении товара в корзину');
+            error: function() {
+                showBootstrapNotification('Ошибка при добавлении товара в корзину', 'danger');
                 button.prop('disabled', false).text('Добавить в корзину');
             }
         });
     });
     
-    // Функция показа уведомления
-    function showNotification(message) {
-        $('.cart-notification').remove();
+    // Функция для Bootstrap уведомлений
+    function showBootstrapNotification(message, type) {
+        var notification = $(
+            '<div class="alert alert-' + type + ' alert-dismissible fade show fixed-top mt-5" style="z-index: 2000; margin-left: 20%; margin-right: 20%;">' +
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+            '</div>'
+        );
         
-        var notification = $('<div class="cart-notification">' + message + '</div>');
         $('body').append(notification);
         
         setTimeout(function() {
-            notification.fadeOut(300, function() {
-                $(this).remove();
-            });
+            notification.alert('close');
         }, 3000);
     }
 });
+</script>
 </script>
 </script>

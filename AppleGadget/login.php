@@ -1,6 +1,8 @@
 <?php
 if (isset($_SESSION['login'])){
     header('Location: index.php');
+    $mess = isset($mess) ? $mess : "";
+    $mess_type = "error";
 } if(isset($_POST['login'])){
     if((!empty ($_POST["login"])) && !empty ($_POST['password'])){
         $login = htmlspecialchars($_POST['login']);
@@ -45,4 +47,29 @@ include 'header.php';
     </div>
 </section>
 <?php if(!empty($mess)){ echo "<div class='error'>" . $mess . "</div>"; } ?>
+<?php if(!empty($mess)): ?>
+<div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel">⚠️ Ошибка авторизации</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <?= $mess ?>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    var notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
+    notificationModal.show();
+});
+</script>
+<?php endif; ?>
 <?=template_footer();?>

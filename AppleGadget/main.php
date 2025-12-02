@@ -7,30 +7,30 @@ $stmt -> execute();
 $most_popular_products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 include 'header.php';
 ?>
-<div id="slogan">
+<div id="slogan" class="container-fluid bg-dark text-white text-center py-5" style="margin-top: 60px;">
     <h2>iPhone 17 Pro</h2>
     <p>Стильный. Легкий. Прочный. Современный</p>
-    <button href="index.php?page=products" onclick="location.href='index.php?page=products'" class="btn btn-secondary">Купить</button>
+    <a href="index.php?page=product&id=1" class="btn btn-light btn-lg mt-3">Купить</a>
 </div>
 <div class="main_home">
     <h2 class="section_title">Хиты продаж</h2>
     <div class="popular_products">
-        <?php foreach ($most_popular_products as $product): ?>
-        <div class="porduct_card">
+    <?php foreach ($most_popular_products as $product): ?>
+    <div class="porduct_card">
         <a href="index.php?page=product&id=<?=$product['id']?>">
             <img src="img/<?=$product['img']?>" alt="<?=$product['name']?>" width="250px" height="250px">
             <div class="title_product_home"><?=$product['name'] ?></div>
             <div class="price_product_home">
-                    <?=$product['price']?> &#8381;
-                </div>
-                <form action="index.php?page=cart" method="post">
-                    <input type="hidden" name="product_id" value="<?=$product['id']?>">
-                    <input type="submit" value="Добавить в корзину">
-                </form>
+                <?=isset($product['price']) ? number_format((float)$product['price'], 0, '', ' ') : '0'  ?> &#8381;
+            </div>
         </a>
-        </div>
-        <?php endforeach; ?>
+        <!-- Вместо формы - кнопка для AJAX -->
+        <button class="add-to-cart-btn btn btn-primary w-100 mt-2" data-product-id="<?=$product['id']?>">
+            Добавить в корзину
+        </button>
     </div>
+    <?php endforeach; ?>
+</div>
 </div>
 <div class="advantages">
         <h2 class="section_title">Наши преимущества</h2>
@@ -57,4 +57,58 @@ include 'header.php';
             </div>
         </div>
 </div>
+<script>
+$(document).ready(function() {
+    // Добавление товара в корзину с главной страницы
+    $('.add-to-cart-btn').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var productId = $(this).data('product-id');
+        var button = $(this);
+        
+        $.ajax({
+            url: 'ajax_cart.php',
+            type: 'POST',
+            data: {
+                action: 'add',
+                product_id: productId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // Обновляем счетчик в шапке
+                    $('.cart-count').text(response.cart_count);
+                    
+                    // Показываем Bootstrap уведомление
+                    showBootstrapNotification('Товар добавлен в корзину', 'success');
+                } else {
+                    showBootstrapNotification(response.message, 'danger');
+                }
+            },
+            error: function() {
+                showBootstrapNotification('Ошибка при добавлении товара', 'danger');
+            }
+        });
+    });
+    
+    // Функция для Bootstrap уведомлений
+    function showBootstrapNotification(message, type) {
+        // Создаем элемент уведомления
+        var notification = $(
+            '<div class="alert alert-' + type + ' alert-dismissible fade show fixed-top mt-5" style="z-index: 2000; margin-left: 20%; margin-right: 20%;">' +
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+            '</div>'
+        );
+        
+        $('body').append(notification);
+        
+        // Автоматически скрываем через 3 секунды
+        setTimeout(function() {
+            notification.alert('close');
+        }, 3000);
+    }
+});
+</script>
 <?=template_footer()?>

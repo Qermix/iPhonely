@@ -32,9 +32,9 @@ include 'header.php';
                                 <button class="quantity-btn increase" type="button">+</button>
                             </div>
                             <div class="cart-item-total">
-                                <span class="item-total"> <?= isset($item['price']) && isset($item['quantity']) 
-            ? number_format((float)$item['price'] * (int)$item['quantity'], 0, '', ' ') 
-            : '0'?> &#8381;</span>
+                                <span class="item-total"><?= isset($item['price']) && isset($item['quantity']) 
+                                    ? number_format((float)$item['price'] * (int)$item['quantity'], 0, '', ' ') 
+                                    : '0'?> &#8381;</span>
                             </div>
                             <button class="cart-item-remove" type="button">Удалить</button>
                         </div>
@@ -50,8 +50,8 @@ include 'header.php';
                 <div class="order-row">
                     <span>Товары (<?= getCartCount() ?>)</span>
                     <span id="cartTotal"><?= isset($_SESSION['cart']) && !empty($_SESSION['cart']) 
-        ? number_format(getCartTotal(), 0, '', ' ') 
-        : '0' ?> ₽</span>
+                        ? number_format(getCartTotal(), 0, '', ' ') 
+                        : '0' ?> ₽</span>
                 </div>
                 
                 <div class="order-row">
@@ -66,39 +66,85 @@ include 'header.php';
                 <div class="order-total">
                     <h3>Итого</h3>
                     <h3 id="orderTotal"><?= isset($_SESSION['cart']) && !empty($_SESSION['cart']) 
-        ? number_format(getCartTotal(), 0, '', ' ') 
-        : '0' ?> ₽</h3>
+                        ? number_format(getCartTotal(), 0, '', ' ') 
+                        : '0' ?> ₽</h3>
                 </div>
                 
-                <button class="checkout-btn" <?= empty($_SESSION['cart']) ? 'disabled' : '' ?>>Перейти к оформлению</button>
+                <button class="checkout-btn" <?= empty($_SESSION['cart']) ? 'disabled' : '' ?>>
+                    <?= empty($_SESSION['cart']) ? 'Корзина пуста' : 'Перейти к оформлению' ?>
+                </button>
             </div>
         </div>
     </div>
 </div>
-<?=template_footer()?>
 
 <script>
 $(document).ready(function() {
+    // Проверка авторизации (PHP переменная в JS)
+    var isLoggedIn = <?= isset($_SESSION['login']) ? 'true' : 'false' ?>;
+    
+    // Функция для показа уведомлений Bootstrap
+    function showBootstrapNotification(message, type = 'success') {
+        // Удаляем предыдущие уведомления
+        $('.alert-custom').remove();
+        
+        var alertClass = '';
+        switch(type) {
+            case 'success': alertClass = 'alert-success'; break;
+            case 'danger': alertClass = 'alert-danger'; break;
+            case 'warning': alertClass = 'alert-warning'; break;
+            case 'info': alertClass = 'alert-info'; break;
+            default: alertClass = 'alert-primary';
+        }
+        
+        var notification = $(
+            '<div class="alert ' + alertClass + ' alert-custom alert-dismissible fade show position-fixed" style="z-index: 2000; top: 80px; left: 50%; transform: translateX(-50%); min-width: 300px;">' +
+                '<div class="d-flex align-items-center">' +
+                    '<div class="flex-grow-1">' + message + '</div>' +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                '</div>' +
+            '</div>'
+        );
+        
+        $('body').append(notification);
+        
+        // Автоматически скрываем через 3 секунды
+        setTimeout(function() {
+            notification.alert('close');
+        }, 3000);
+    }
+    
     // Обновление счетчика корзины в шапке
     function updateHeaderCart(count) {
-        $('.cart-count').text(count);
+        var cartCountElement = $('.cart-count');
+        if (cartCountElement.length === 0) {
+            // Создаем счетчик, если его нет
+            $('.logo_icons a[href*="cart"]').append('<span class="cart-count badge bg-danger rounded-pill" style="font-size: 10px; padding: 2px 5px;">' + count + '</span>');
+        } else {
+            cartCountElement.text(count);
+            if (count > 0) {
+                cartCountElement.show();
+            } else {
+                cartCountElement.hide();
+            }
+        }
     }
     
     // Обновление общего количества в корзине
     function updateCartTotals(count, total) {
         $('#cartTotal').text(total.toLocaleString('ru-RU') + ' ₽');
         $('#orderTotal').text(total.toLocaleString('ru-RU') + ' ₽');
-        $('.order-row span:first-child').text('Товары (' + count + ')');
+        $('.order-row:first-child span:first-child').text('Товары (' + count + ')');
         
         // Делаем кнопку оформления активной/неактивной
         if (count === 0) {
-            $('.checkout-btn').prop('disabled', true);
+            $('.checkout-btn').prop('disabled', true).text('Корзина пуста');
         } else {
-            $('.checkout-btn').prop('disabled', false);
+            $('.checkout-btn').prop('disabled', false).text('Перейти к оформлению');
         }
     }
     
-    // Увеличение количества товара (используем делегирование)
+    // Увеличение количества товара
     $(document).on('click', '.increase', function() {
         var item = $(this).closest('.cart-item');
         var productId = item.data('product-id');
@@ -108,7 +154,7 @@ $(document).ready(function() {
         updateCartItem(productId, current + 1, item);
     });
     
-    // Уменьшение количества товара (используем делегирование)
+    // Уменьшение количества товара
     $(document).on('click', '.decrease', function() {
         var item = $(this).closest('.cart-item');
         var productId = item.data('product-id');
@@ -120,7 +166,7 @@ $(document).ready(function() {
         }
     });
     
-    // Удаление товара (используем делегирование)
+    // Удаление товара
     $(document).on('click', '.cart-item-remove', function() {
         var item = $(this).closest('.cart-item');
         var productId = item.data('product-id');
@@ -154,13 +200,30 @@ $(document).ready(function() {
                     // Обновляем общие данные
                     updateHeaderCart(response.cart_count);
                     updateCartTotals(response.cart_count, response.cart_total);
+                    
+                    // Если количество стало 0, удаляем товар
+                    if (quantity === 0) {
+                        item.remove();
+                        showBootstrapNotification('Товар удален из корзины', 'success');
+                        
+                        // Проверяем, не пуста ли корзина
+                        if (response.cart_count === 0) {
+                            $('#cartItems').html(`
+                                <div class="empty-cart">
+                                    <h3>Корзина пуста</h3>
+                                    <p>Добавьте товары из каталога</p>
+                                    <a href="index.php?page=catalog" class="btn btn-primary">Перейти в каталог</a>
+                                </div>
+                            `);
+                        }
+                    }
                 } else {
-                    alert(response.message || 'Ошибка при обновлении количества');
+                    showBootstrapNotification(response.message || 'Ошибка при обновлении количества', 'danger');
                 }
             },
             error: function(xhr, status, error) {
                 console.log('AJAX Error:', xhr.responseText, status, error);
-                alert('Ошибка при обновлении количества товара');
+                showBootstrapNotification('Ошибка при обновлении количества товара', 'danger');
             }
         });
     }
@@ -177,40 +240,107 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success){
+                    // НЕМЕДЛЕННО УДАЛЯЕМ ЭЛЕМЕНТ ИЗ DOM
+                    item.remove();
                     
                     // Обновляем общие данные
                     updateHeaderCart(response.cart_count);
                     updateCartTotals(response.cart_count, response.cart_total);
                     
+                    // Показываем уведомление об успешном удалении
+                    showBootstrapNotification('Товар удален из корзины', 'success');
+                    
                     // Если корзина пуста, показываем сообщение
                     if (response.cart_count === 0) {
-                        setTimeout(function() {
-                            $('#cartItems').html(`
-                                <div class="empty-cart">
-                                    <h3>Корзина пуста</h3>
-                                    <p>Добавьте товары из каталога</p>
-                                    <a href="index.php?page=catalog" class="btn-primary">Перейти в каталог</a>
-                                </div>
-                            `);
-                        });
+                        $('#cartItems').html(`
+                            <div class="empty-cart">
+                                <h3>Корзина пуста</h3>
+                                <p>Добавьте товары из каталога</p>
+                                <a href="index.php?page=catalog" class="btn btn-primary">Перейти в каталог</a>
+                            </div>
+                        `);
                     }
                 } else {
-                    alert(response.message || 'Ошибка при удалении товара');
+                    showBootstrapNotification(response.message || 'Ошибка при удалении товара', 'danger');
                 }
             },
             error: function(xhr, status, error) {
                 console.log('AJAX Error:', xhr.responseText, status, error);
-                alert('Ошибка при удалении товара');
+                showBootstrapNotification('Ошибка при удалении товара', 'danger');
             }
         });
     }
     
-    // Обработка кнопки оформления заказа
+    // Обработка кнопки оформления заказа - РЕАЛЬНАЯ РЕАЛИЗАЦИЯ
     $('.checkout-btn').on('click', function() {
-        if (!$(this).prop('disabled')) {
-            alert('Функция оформления заказа будет реализована позже');
-            // window.location.href = 'index.php?page=checkout';
+        var button = $(this);
+        if (button.prop('disabled')) return;
+        
+        // Проверяем авторизацию
+        if (!isLoggedIn) {
+            showBootstrapNotification('Для оформления заказа необходимо войти в систему', 'warning');
+            setTimeout(function() {
+                window.location.href = 'index.php?page=login';
+            }, 2000);
+            return;
+        }
+        
+        // Показываем подтверждение
+        if (confirm('Вы уверены, что хотите оформить заказ?')) {
+            // Блокируем кнопку
+            button.prop('disabled', true).text('Оформляем заказ...');
+            
+            $.ajax({
+                url: 'ajax_order.php',
+                type: 'POST',
+                data: {
+                    action: 'create_order'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Показываем уведомление об успехе
+                        showBootstrapNotification(response.message, 'success');
+                        
+                        // Обновляем счетчик в шапке
+                        updateHeaderCart(0);
+                        
+                        // Очищаем корзину на странице
+                        $('#cartItems').html(`
+                            <div class="empty-cart">
+                                <h3>Заказ успешно оформлен!</h3>
+                                <p>Номер вашего заказа: <strong>#${response.order_id}</strong></p>
+                                <p>Спасибо за покупку! С вами свяжутся для подтверждения заказа.</p>
+                                <a href="index.php?page=catalog" class="btn btn-primary">Продолжить покупки</a>
+                            </div>
+                        `);
+                        
+                        // Обновляем общие данные
+                        updateCartTotals(0, 0);
+                        
+                        // Делаем кнопку неактивной
+                        button.prop('disabled', true).text('Заказ оформлен');
+                        
+                        // Через 5 секунд перенаправляем на главную
+                        setTimeout(function() {
+                            window.location.href = 'index.php?page=home';
+                        }, 5000);
+                    } else {
+                        showBootstrapNotification(response.message, 'danger');
+                        button.prop('disabled', false).text('Перейти к оформлению');
+                    }
+                },
+                error: function() {
+                    showBootstrapNotification('Ошибка соединения с сервером', 'danger');
+                    button.prop('disabled', false).text('Перейти к оформлению');
+                }
+            });
         }
     });
+    
+    // Инициализация счетчика в шапке при загрузке страницы
+    updateHeaderCart(<?= getCartCount() ?>);
 });
 </script>
+
+<?=template_footer()?>

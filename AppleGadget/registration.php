@@ -82,69 +82,37 @@ if(isset($_POST['registr_button'])){
         </form>
 </div>
 </section>
-<div id="notificationModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <div class="modal-icon">
-            <span id="modalIcon"></span>
-        </div>
-        <div id="modalMessage"><?=$mess?></div>
-        <div class="modal-buttons">
-            <button id="modalOkButton" class="modal-btn">OK</button>
+<?php if(!empty($mess)): ?>
+<div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel">
+                    <?= $mess_type == 'success' ? '✅ Успешно!' : '⚠️ Ошибка' ?>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <?= $mess ?>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
         </div>
     </div>
 </div>
 <?=template_footer()?>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('notificationModal');
-    const modalMessage = document.getElementById('modalMessage');
-    const modalIcon = document.getElementById('modalIcon');
-    const closeBtn = document.querySelector('.close');
-    const okButton = document.getElementById('modalOkButton');
-
-    function showModal(message, type) {
-        modalMessage.innerHTML = message;
-
-        switch(type) {
-            case 'success':
-                modalIcon.textContent = '✓';
-                modalIcon.style.background = '#4CAF50';
-                break;
-            case 'error':
-                modalIcon.textContent = '!';
-                modalIcon.style.background = '#f44336';
-                break;
-            default:
-                modalIcon.textContent = 'i';
-                modalIcon.style.background = '#2196F3';
-        }
-        
-        modal.style.display = 'block';
-        if(type === 'success') {
-            setTimeout(function() {
-                modal.style.display = 'none';
-                window.location.href = 'index.php?page=login';
-            }, 3000);
-        }
-    }
+$(document).ready(function() {
+    var notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
+    notificationModal.show();
     
-    function closeModal() {
-        modal.style.display = 'none';
-    }
-    
-    closeBtn.onclick = closeModal;
-    okButton.onclick = closeModal;
-    
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            closeModal();
-        }
-    }
-    
-    // Показываем модальное окно, если есть сообщение
-    <?php if(!empty($mess)): ?>
-        showModal("<?php echo $mess; ?>", "<?php echo $mess_type; ?>");
-    <?php endif; ?>
+    // При закрытии модального окна перенаправляем на страницу входа, если успешно
+    $('#notificationModal').on('hidden.bs.modal', function () {
+        <?php if($mess_type == 'success'): ?>
+            window.location.href = 'index.php?page=login';
+        <?php endif; ?>
+    });
 });
 </script>
+<?php endif; ?>

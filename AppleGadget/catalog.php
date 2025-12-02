@@ -148,18 +148,17 @@ echo "<tr><td colspan='1'>Нет совпадений</td></tr>";
         <!-- Сетка товаров -->
     <div class="main_products">
             <div class="catalog_header">
-                <h1 class="catalog-title">Каталог товаров</h1>
-                <div class="searc">
-                    <input type="text" id="search" placeholder="Поиск...">
-                    <table id="result">
-                        <thead>
-                        </thead>
-                    <tbody>
-
-                    </tbody>
-                    </table>
-                </div>
-            </div>
+    <h1 class="catalog-title">Каталог товаров</h1>
+    <div class="searc">
+        <div class="input-group mb-3">
+            <input type="text" id="search" class="form-control" placeholder="Поиск товаров..." aria-label="Поиск товаров">
+            <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                <i class="fa fa-search"></i>
+            </button>
+        </div>
+        <div id="searchResults" class="position-absolute bg-white border rounded p-3" style="display: none; z-index: 1000; width: 400px;"></div>
+    </div>
+</div>
         <div class="products-grid">
             <?php if(empty($products)): ?>
                 <div class="no-products">
@@ -290,27 +289,27 @@ $(document).ready(function() {
             },
             dataType: 'json',
             success: function(response) {
-                console.log('Add to cart response:', response);
-                
-                if (response.success) {
-                    // Обновляем счетчик в шапке
-                    $('.cart-count').text(response.cart_count);
-                    
-                    // Показываем уведомление
-                    showNotification(response.message || 'Товар добавлен в корзину');
-                    
-                    // Возвращаем текст кнопки через 2 секунды
-                    setTimeout(function() {
-                        button.prop('disabled', false).text('Добавить в корзину');
-                    }, 2000);
-                    
-                    // Обновляем корзину в реальном времени
-                    updateCartDisplay();
-                } else {
-                    alert(response.message || 'Ошибка при добавлении товара');
-                    button.prop('disabled', false).text('Добавить в корзину');
-                }
-            },
+    console.log('Add to cart response:', response);
+    
+    if (response.success) {
+        // Обновляем счетчик в шапке
+        updateCartCountInHeader(response.cart_count);
+        
+        // Показываем Bootstrap уведомление
+        showBootstrapNotification(response.message || 'Товар добавлен в корзину', 'success');
+        
+        // Возвращаем текст кнопки через 2 секунды
+        setTimeout(function() {
+            button.prop('disabled', false).text('Добавить в корзину');
+        }, 2000);
+        
+        // Обновляем корзину в реальном времени
+        updateCartDisplay();
+    } else {
+        showBootstrapNotification(response.message || 'Ошибка при добавлении товара', 'danger');
+        button.prop('disabled', false).text('Добавить в корзину');
+    }
+},
             error: function(xhr, status, error) {
                 console.log('AJAX Error:', xhr.responseText, status, error);
                 
@@ -357,28 +356,92 @@ $(document).ready(function() {
         console.log('Updating cart view with:', data);
     }
     
-    // Функция показа уведомления
-    function showNotification(message) {
-        // Удаляем предыдущие уведомления
-        $('.cart-notification').remove();
-        
-        var notification = $('<div class="cart-notification">' + message + '</div>');
-        $('body').append(notification);
-        
-        // Уведомление само стилизуется через CSS
-        // Удаляем через 3 секунды
-        setTimeout(function() {
-            notification.fadeOut(300, function() {
-                $(this).remove();
-            });
-        }, 3000);
+    function updateCartCountInHeader(count) {
+    // Создаем счетчик, если его нет
+    if ($('.cart-count').length === 0) {
+        $('.logo_icons a[href*="cart"]').append('<span class="cart-count badge bg-danger rounded-pill">' + count + '</span>');
+    } else {
+        $('.cart-count').text(count);
+        if (count > 0) {
+            $('.cart-count').show();
+        } else {
+            $('.cart-count').hide();
+        }
     }
+}
+
+    // Функция показа уведомления
+function showBootstrapNotification(message, type = 'success') {
+    // Удаляем предыдущие уведомления
+    $('.alert').remove();
+    
+    var notification = $(
+        '<div class="alert alert-' + type + ' alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-5" style="z-index: 2000; min-width: 300px;">' +
+            '<div class="d-flex justify-content-between align-items-center">' +
+                '<span>' + message + '</span>' +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+            '</div>' +
+        '</div>'
+    );
+    
+    $('body').append(notification);
+    
+    // Автоматически скрываем через 3 секунды
+    setTimeout(function() {
+        notification.alert('close');
+    }, 3000);
+}
     
     // Предотвращаем клик на всю карточку товара
     $('.product-card .product-link').on('click', function(e) {
         console.log('Product link clicked');
         // Разрешаем переход по ссылке, но останавливаем всплытие
         return true;
+    });
+});
+
+$(document).ready(function() {
+    var searchTimeout;
+    
+    // Поиск при вводе текста
+    $('#search').on('input', function() {
+        clearTimeout(searchTimeout);
+        var searchQuery = $(this).val();
+        
+        if (searchQuery.length < 2) {
+            $('#searchResults').hide();
+            return;
+        }
+        
+        searchTimeout = setTimeout(function() {
+            $.ajax({
+                url: 'search_products.php',
+                type: 'POST',
+                data: { search: searchQuery },
+                success: function(data) {
+                    if (data.trim() !== '') {
+                        $('#searchResults').html(data).show();
+                    } else {
+                        $('#searchResults').html('<div class="p-3">Ничего не найдено</div>').show();
+                    }
+                }
+            });
+        }, 300);
+    });
+    
+    // Поиск при нажатии кнопки
+    $('#searchButton').on('click', function() {
+        var searchQuery = $('#search').val();
+        if (searchQuery.length > 0) {
+            window.location.href = 'index.php?page=catalog&search=' + encodeURIComponent(searchQuery);
+        }
+    });
+    
+    // Скрываем результаты при клике вне области
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#search, #searchResults').length) {
+            $('#searchResults').hide();
+        }
     });
 });
 </script>
